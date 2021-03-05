@@ -1,0 +1,77 @@
+---
+
+- name: Install Docker Compose
+  apt: 
+    name: docker-compose
+    state: present
+
+- name: Stop Docker service
+  systemd: 
+    name: docker
+    state: stopped
+
+- name: Create directory for systemctl overrides
+  become: true
+  file:
+    path: "{{ docker_systemctl_override_dir }}"
+    state: directory
+
+- name: Create directory new docker data drive
+  become: true
+  file:
+    path: "{{ docker_data_dir }}/docker"
+    state: directory
+
+- name: Adding amendment file to service file
+  become: true
+  copy:
+    dest: "{{ docker_systemctl_override_dir }}/exec-path.conf"
+    content: "[Service]\nExecStart=\nExecStart=/usr/bin/dockerd --data-root {{ docker_data_dir }} -H fd:// --containerd=/run/containerd/containerd.sock"
+
+- name: Reload Daemon
+  become: true
+  systemd:
+    daemon_reload: yes
+
+- name: Start Docker service
+  become: true
+  systemd:
+    name: docker
+    state: started
+
+- name: Pull PMM Docker Image
+  become: true
+  docker_image:
+    name: percona/pmm-server:1
+    source: pull
+
+- name: Creating PMM Data Container
+  become: true
+  docker_container:
+    name: pmm-data
+    image: "percona/pmm-server:{{ pmm_server_version }}"
+    state: present
+    volumes:
+    - /opt/prometheus/data
+    - /opt/consul-data
+    - /var/lib/mysql
+    - /var/lib/grafana
+    command: "/bin/true"
+  when: pmm_initial_build|bool
+
+- name: Start PMM Container
+  become: true
+  docker_container: 
+    name: pmm-server
+    image: "percona/pmm-server:{{ pmm_server_version }}"
+    state: started
+    volumes_from: 
+    - pmm-data
+    ports:
+    - "80:80"
+    restart_policy: always
+    env: 
+      METRICS_RESOLUTION: "3s"
+      METRICS_RETENTION: "{{ pmm_server_metric_retention }}"
+      MAX_CONNECTIONS: "{{ pmm_server_max_connection }}"
+  when: pmm_initial_build|bool

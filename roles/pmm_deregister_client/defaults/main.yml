@@ -1,0 +1,6 @@
+---
+## PMM client configuration
+#
+pmm_server_admin_password: "admin"
+pmm_server_hostname: "{{ default(omit) }}"
+ 

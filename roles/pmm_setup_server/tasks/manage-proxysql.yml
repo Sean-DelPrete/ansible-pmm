@@ -1,5 +1,4 @@
 - name: Add ProxySQL metrics
-  become: true
   command: >-
             /usr/sbin/pmm-admin add proxysql:metrics {{ pmm_alias | default(inventory_hostname) }}
             --dsn "{{ pmm_proxysql_username | default('stats') }}:{{ pmm_proxysql_password | default('stats') }}@tcp(localhost:{{ pmm_proxysql_port | default('6032') }})/"
@@ -7,7 +6,6 @@
   register: proxysql_metrics
 
 - name: Restart Prometheus client (ProxySQL metrics)
-  become: true
   service:
     name: "pmm-proxysql-metrics-{{ proxysql_metrics_port }}"
     state: restarted

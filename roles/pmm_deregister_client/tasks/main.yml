@@ -1,0 +1,26 @@
+---
+
+- name: Check pmm-client running version
+  become: true
+  shell: "pmm-admin info | grep 'PMM Server' | awk '{print $NF}'"
+  register: pmm_server_ip
+  ignore_errors: yes
+
+- name: Get Metadata For Server
+  command: "curl 'metadata.google.internal/computeMetadata/v1/instance/attributes/pmm-client-description' -H 'Metadata-Flavor: Google'"
+  register: curl_output
+
+- set_fact:
+    pmm_alias: "{{ curl_output.stdout }}"
+  when: curl_output.stdout != '0' and '404' not in curl_output.stdout 
+
+- name: Remove PMM Services
+  become: true
+  command: "/usr/sbin/pmm-admin remove --all"
+  when: pmm_server_ip|bool
+  register: pmm_removed
+  ignore_errors: yes
+
+- name: De-Register Instance from PMM Server
+  command: curl -s -X PUT -d '{"Datacenter":"dc1","Node":"{{ pmm_alias | default(ansible_hostname)  }}"}' 'http://admin:{{ pmm_server_admin_password }}@{{ pmm_server_ip.stdout }}/v1/catalog/deregister?dc=dc1'
+  when: pmm_server_ip|bool

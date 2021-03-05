@@ -1,0 +1,10 @@
+---
+- name: Install and configure pmm reporting 
+  hosts: all
+  vars:
+    pmm_enabled: true
+    pmm_server_hostname: "10.39.42.213"
+  
+  tasks:
+    - include_role: 
+        name: ~/git/ansible-pmm/roles/pmm_setup_client

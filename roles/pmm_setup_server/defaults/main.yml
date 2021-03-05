@@ -1,11 +1,7 @@
 ---
 ## PMM client configuration
 #
-#
-
-pmm_enabled: false
-
-pmm_version: "{{ global_pmm_version | default('1.17.4') }}"
+pmm_version: "{{ global_pmm_version | default('1.17.3') }}"
 pmm_install_version: "{{ pmm_version }}"
 
 linux_metrics_port: 42000                                              # Not applicable to RDS script, uses prom_exporter_port from CNS
@@ -13,17 +9,38 @@ mysql_queries_port: 42001                                              # port is
 mysql_metrics_port: 42002                                              # Not applicable to RDS script, uses prom_exporter_port + 1000
 mongodb_metrics_port: 42003
 proxysql_metrics_port: 42004
-postgres_metrics_port: 42005
 
 pmm_query_source: slowlog                                              # Automatically performance_schema when RDS is used
 pmm_defaults_file: /usr/local/percona/.my.cnf                          # Used with pmm-admin for MySQL credentials
 
 #pmm_src_defaults_file: /path/to/.my.cnf                               # Source for pmm_defaults_file - use global_pmm_mysql_username and global_pmm_mysql_passwd
-pmm_ssl_enabled: false                                                # in ansible vault instead, unless requiring special settings or per-host.
+pmm_ssl_enabled: true                                                  # in ansible vault instead, unless requiring special settings or per-host.
 
 pmm_qan_enabled: yes                                                   # enable/disable provisioning of client side mysql:queries (QAN)
 
-pmm_client_ci: yes                                                     # enable CI for PMM
+pmm_client_ci: yes
+
+                                                     # enable CI for PMM
+docker_systemctl_override_dir: "/etc/systemd/system/docker.service.d"
+docker_data_drive: "/data"
+docker_data_dir: "{{ docker_data_drive }}/docker"
+pmm_server_version: 1
+pmm_server_metric_retention: "720h"
+pmm_server_max_connection: "100"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                                                                        # use /etc/ansible/group_vars/pmm-client/pmm.yml
 pmm_client_enabled: yes                                                # enable/disable pmm-client deployment
@@ -34,7 +51,7 @@ pmm_client_disable_tablestats_limit: 1000                              # Set lim
 pmm_client_check_for_vividcortex: false                                # Handle Vividcortex agent during tasks
 
 
-pmm_server_hostname: "{{ default(omit) }}"
+pmm_server_hostname: "localhost"
  
 
 # These must be placed in vault
@@ -42,7 +59,7 @@ pmm_client_username: "pmm_admin"
 pmm_client_passwd: "{{ lookup('env','PMM_CLIENT_PASSWORD') }}"
 
 pmm_mysql_username: "{{ pmm_client_username }}"
-pmm_mysql_passwd: "{{ pmm_client_passwd }}"
+pmm_mysql_passwd: "{{ lookup('env', 'MYSQL_PMM_PASSWORD') }}"
 
 pmm_mongo_auth: false
 pmm_mongodb_username: "{{ pmm_client_username }}"
@@ -52,12 +69,13 @@ pmm_mongodb_passwd: "{{ lookup('env','MONGO_PMM_PASSWORD') }}"
 pmm_proxysql_username: "admin"
 pmm_proxysql_password: "{{ lookup('env','PROXYSQL_ADMIN_PASSWORD') }}"
 
-# postgres user defaults
-pmm_postgres_username: "pmm_user"
-pmm_postgres_password: "{{ lookup('env','POSTGRES_ADMIN_PASSWORD') }}"
-
 # mongo ssl 
 pmm_mongo_ssl: false
 mongo_ssl_ca_file: "/path/to/ca"
 mongo_ssl_pem_file: "/path/to/pem"
 
+pmm_client_mysql_username: "pmm_admin"
+pmm_client_mongo_username: "pmm_admin"
+pmm_client_mysql_passwd: "definied in group_vars/env/pmm_client.enc.yml"
+pmm_client_mongo_passwd: "definied in group_vars/env/pmm_client.enc.yml"
+pmm_env: "env name in pmm domain"

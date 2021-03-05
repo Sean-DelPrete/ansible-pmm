@@ -1,4 +1,8 @@
 ---
 percona_mysql_key_server: keys.gnupg.net  # Specify the keyserver for GPG
 percona_repo_install: true                # Set to "false" if repos already present
-...
+
+
+install_percona_packages: true
+percona_package: { url: "https://repo.percona.com/apt", name: "percona-release_latest.{{ ansible_distribution_release }}_all.deb" }
+

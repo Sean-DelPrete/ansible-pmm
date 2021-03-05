@@ -1,18 +1,31 @@
 ---
-- name: install percona server apt-key
-  apt_key:
-    keyserver: "{{ percona_mysql_key_server }}"
-    id: 9334A25F8507EFA5
-    state: present
 
-- name: install percona repo on debian family hosts
-  apt_repository:
-    repo: "{{ item }}"
-    state: present
-  register: percona_mysql_apt_repo
-  loop: "{{ percona_mysql_repo|default([]) }}"
+- name: Install Percona repository packages 
+  become: true
+  apt:
+    deb: "{{ percona_package.url }}/{{ percona_package.name }}"
+    update_cache: true
+    allow_unauthenticated: yes
+    install_recommends: yes
+  register: percona_apt_repo
+  when: install_percona_packages and ansible_os_family == 'Debian'
+
+
+#- name: install percona server apt-key
+#  apt_key:
+#    keyserver: "{{ percona_mysql_key_server }}"
+#    id: 9334A25F8507EFA5
+#    state: present
+#
+#- name: install percona repo on debian family hosts
+#  apt_repository:
+#    repo: "{{ item }}"
+#    state: present
+#  register: percona_mysql_apt_repo
+#  loop: "{{ percona_mysql_repo|default([]) }}"
 
 - name: update apt cache
+  become: true
   apt:
     update_cache: yes
-  when: percona_mysql_apt_repo.changed
+  when: percona_apt_repo.changed
